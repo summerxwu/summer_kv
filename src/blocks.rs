@@ -1,4 +1,5 @@
 mod block_builder;
+mod iterator;
 
 use bytes::{Buf, BufMut, Bytes};
 

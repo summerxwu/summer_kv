@@ -48,6 +48,7 @@ impl<'a> Iterator for RecordIterator<'a> {
         self.is_valid = true;
     }
     fn seek_to_key(&mut self, key: &[u8]) -> bool{
+        // TODO(summerxwu): Maybe use binary search is better
         if self.block.offsets.len() == 0 {
             self.is_valid = false;
             return false;

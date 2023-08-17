@@ -1,6 +1,7 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 mod blocks;
+mod sstable;
 mod util;
 pub fn add(left: usize, right: usize) -> usize {
     left + right

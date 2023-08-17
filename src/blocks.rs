@@ -1,7 +1,5 @@
-mod block_builder;
-mod iterator;
-
 use bytes::{Buf, BufMut, Bytes};
+pub use block_builder::BlockBuilder;
 
 /// A block is the smallest unit of read and caching in LSM tree.
 /// It is a collection of sorted key-value pairs.
@@ -58,5 +56,7 @@ impl Blocks {
     }
 }
 
+mod block_builder;
+mod iterator;
 #[cfg(test)]
 mod tests;

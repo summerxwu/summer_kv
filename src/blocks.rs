@@ -57,6 +57,6 @@ impl Blocks {
 }
 
 mod block_builder;
-mod iterator;
+pub mod iterator;
 #[cfg(test)]
 mod tests;

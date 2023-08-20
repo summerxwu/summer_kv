@@ -1,5 +1,5 @@
 use crate::blocks::block_builder::BlockBuilder;
-use crate::blocks::iterator::RecordIterator;
+use crate::blocks::record_iterator::RecordIterator;
 use crate::blocks::Blocks;
 use crate::util::Iterator;
 

@@ -1,4 +1,4 @@
-use crate::blocks::iterator::RecordIterator;
+use crate::blocks::record_iterator::RecordIterator;
 use crate::blocks::{Blocks, SIZE_U16};
 use crate::util::{env, Iterator};
 use anyhow::Result;
@@ -58,7 +58,7 @@ pub type KVPair = (Bytes, Bytes);
 /// the data block to fetch the result
 ///
 
-struct SSTable {
+pub struct SSTable {
     file_object: env::FileObject,
     indexes: Vec<IndexBlockRecord>,
     seq: u8,

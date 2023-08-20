@@ -1,9 +1,21 @@
+use crate::sstable::SSTable;
 use crate::util::Iterator;
-pub struct BlockIterator{
+pub struct BlockIterator<'a>{
+    sstable : &'a SSTable,
+    is_valid: bool,
 
 }
 
-impl Iterator for BlockIterator {
+impl<'a> BlockIterator<'a> {
+    pub fn new( sstable : &'a SSTable) -> Self{
+        BlockIterator{
+            sstable,
+            is_valid: false
+        }
+    }
+}
+
+impl<'a> Iterator for BlockIterator<'a> {
     fn seek_to_first(&mut self) {
         todo!()
     }

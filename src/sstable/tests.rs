@@ -1,9 +1,9 @@
+use crate::sstable::iterator::SSTableRecordIterator;
 use crate::sstable::sstable_builder::SSTableBuilder;
 use crate::sstable::SSTable;
 use crate::util::env::sstfile_path;
-use std::fmt::format;
 use std::fs;
-use crate::sstable::block_iterator::BlockIterator;
+use crate::iterator::Iterator;
 
 struct TestSSTable {
     sstable: SSTable,
@@ -34,16 +34,16 @@ impl Drop for TestSSTable {
 }
 #[test]
 fn test_build_sstable_one_record() {
-    TestSSTable::create_for_test(1,1);
+    TestSSTable::create_for_test(1, 1);
 }
 #[test]
 fn test_build_sstable_multi_records() {
-    TestSSTable::create_for_test(1,100);
+    TestSSTable::create_for_test(1, 100);
 }
 
 #[test]
 fn test_open_exists_sstable() {
-    let test_sstable = TestSSTable::create_for_test(1,10);
+    let test_sstable = TestSSTable::create_for_test(1, 10);
     SSTable::open(test_sstable.sstable.seq).unwrap();
 }
 #[test]
@@ -53,10 +53,34 @@ fn test_open_non_exists_sstable() {
 }
 #[test]
 fn test_sstable_iterator() {
-    let test = TestSSTable::create_for_test(1,100);
-    let iter = BlockIterator::new(&(test.sstable));
+    let test_sstable = TestSSTable::create_for_test(1,100);
+    let sstable = SSTable::open(test_sstable.sstable.seq).unwrap();
+    let mut sstable_iter =SSTableRecordIterator::new(& sstable);
+    sstable_iter.seek_to_first();
+    assert_eq!(sstable_iter.key(),b"key_1".as_slice());
+    sstable_iter.next();
+    assert!(sstable_iter.is_valid());
+    assert_eq!(sstable_iter.key(),b"key_2".as_slice());
+    assert_eq!(sstable_iter.value(),b"value_2".as_slice());
 }
 #[test]
-fn test_sstable_seek() {}
+fn test_sstable_seek() {
+    let test_sstable = TestSSTable::create_for_test(1,100);
+    let sstable = SSTable::open(test_sstable.sstable.seq).unwrap();
+    let mut sstable_iter =SSTableRecordIterator::new(& sstable);
+    sstable_iter.seek_to_first();
+    assert_eq!(sstable_iter.key(),b"key_1".as_slice());
+    sstable_iter.seek_to_key(b"key_53".as_slice());
+    assert!(sstable_iter.is_valid());
+    assert_eq!(sstable_iter.key(),b"key_53".as_slice());
+    assert_eq!(sstable_iter.value(),b"value_53".as_slice());
+}
 #[test]
-fn test_sstable_get() {}
+fn test_sstable_get() {
+    let test_sstable = TestSSTable::create_for_test(1, 10);
+    let sstable = SSTable::open(test_sstable.sstable.seq).unwrap();
+    let value = sstable.get(b"key_5").unwrap();
+    assert_eq!(value,b"value_5".as_slice());
+    let value = sstable.get(b"key_not_found");
+    assert!(value.is_err());
+}

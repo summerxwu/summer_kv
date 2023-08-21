@@ -1,3 +1,4 @@
+use std::thread::sleep;
 use crate::blocks::{Blocks, SIZE_U16};
 use bytes::BufMut;
 
@@ -37,7 +38,7 @@ impl BlockBuilder {
         }
     }
     /// return the length of bytes sequence after encoding the origin one
-    fn evaluate_record_encoded_length(key: &[u8], value: &[u8]) -> usize {
+    pub fn evaluate_record_encoded_length(key: &[u8], value: &[u8]) -> usize {
         SIZE_U16 + key.len() + SIZE_U16 + value.len()
     }
 
@@ -83,5 +84,11 @@ impl BlockBuilder {
             offsets:self.offsets.clone(),
             num_of_elements: self.offsets.len(),
         }
+    }
+
+    pub fn clean_up(&mut self){
+        self.data.clear();
+        self.offsets.clear();
+        self.amount = 0;
     }
 }

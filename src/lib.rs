@@ -3,6 +3,8 @@
 mod blocks;
 mod sstable;
 mod util;
+
+mod iterator;
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }

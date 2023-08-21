@@ -1,10 +1,11 @@
-use crate::blocks::record_iterator::RecordIterator;
+use crate::blocks::iterator::BlockRecordIterator;
 use crate::blocks::{Blocks, SIZE_U16};
-use crate::util::{env, Iterator};
+use crate::util::env;
 use anyhow::Result;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
+use crate::iterator::Iterator;
 
-mod block_iterator;
+mod iterator;
 mod sstable_builder;
 pub type KVPair = (Bytes, Bytes);
 /// # SSTable format
@@ -85,7 +86,7 @@ impl SSTable {
             //read the index block
             let buf = file_object.read(index_block_pointer.0, index_block_pointer.1)?;
             let index_block_obj = Blocks::decode(buf.as_ref());
-            let mut record_iter = RecordIterator::new(&index_block_obj);
+            let mut record_iter = BlockRecordIterator::new(&index_block_obj);
             while record_iter.is_valid() {
                 let record = IndexBlockRecord {
                     largest_key: record_iter.key().to_vec().clone(),
@@ -101,7 +102,7 @@ impl SSTable {
             seq,
         })
     }
-    fn get(key: &[u8]) -> Result<KVPair> {
+    fn get(&self, key: &[u8]) -> Result<&[u8]> {
         todo!()
     }
 }

@@ -1,24 +1,18 @@
 use crate::blocks::{Blocks, SIZE_U16};
-use crate::util::Iterator;
+use crate::iterator::Iterator;
 use bytes::Buf;
 use std::cmp::Ordering;
 
 /// RecordIterator yields the records in related blocks if the
 /// iterator it self is valid after invoking next()
 
-pub struct RecordIterator<'a> {
+pub struct BlockRecordIterator<'a> {
     block: &'a Blocks,
     is_valid: bool,
     current_index: usize,
 }
-impl<'a> RecordIterator<'a> {
-    pub fn new(block: &'a Blocks) -> Self {
-        RecordIterator {
-            block,
-            is_valid: false,
-            current_index: 0,
-        }
-    }
+impl<'a> BlockRecordIterator<'a> {
+    
     fn key_at_index(&self, index: usize) -> Result<&'a [u8], String> {
         if index >= self.block.num_of_elements {
             return Err(format!("given index out of range of block`:"));
@@ -32,7 +26,17 @@ impl<'a> RecordIterator<'a> {
     }
 }
 
-impl<'a> Iterator for RecordIterator<'a> {
+impl<'a> Iterator for BlockRecordIterator<'a> {
+    type Item = &'a Blocks;
+
+    fn new(arg: Self::Item) -> Self {
+        BlockRecordIterator {
+            block: arg,
+            is_valid: false,
+            current_index: 0,
+        }
+    }
+
     fn seek_to_first(&mut self) {
         if self.block.offsets.len() == 0 {
             self.is_valid = false;

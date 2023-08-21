@@ -44,6 +44,9 @@ impl FileObject {
         self.size
     }
 }
-pub fn sstfile_path(seq: u8) -> String {
+pub fn sstfile_path(seq: usize) -> String {
+    todo!()
+}
+pub fn get_global_sequence_number() -> usize {
     todo!()
 }

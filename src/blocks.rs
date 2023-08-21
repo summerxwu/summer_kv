@@ -54,9 +54,15 @@ impl Blocks {
             num_of_elements,
         }
     }
+    pub fn largest_key(&self) -> &[u8]{
+        todo!()
+    }
+    pub fn smallest_key(&self) -> &[u8]{
+        todo!()
+    }
 }
 
 mod block_builder;
-pub mod record_iterator;
+pub mod iterator;
 #[cfg(test)]
 mod tests;

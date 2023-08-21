@@ -62,11 +62,11 @@ pub type KVPair = (Bytes, Bytes);
 pub struct SSTable {
     file_object: env::FileObject,
     indexes: Vec<IndexBlockRecord>,
-    seq: u8,
+    seq: usize,
 }
 impl SSTable {
     /// create a new SSTable object by a exists disk file identified by sequence number
-    fn open(seq: u8) -> Result<Self> {
+    fn open(seq: usize) -> Result<Self> {
         let file_path = env::sstfile_path(seq);
         let file_object = env::FileObject::open(file_path.as_str())?;
 

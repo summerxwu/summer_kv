@@ -44,7 +44,7 @@ impl SSTableBuilder {
         let mut indexes_records: Vec<IndexBlockRecord> = Vec::new();
         let mut offset_counter = 0;
         // Write data portion of SSTable
-        for data_block in self.data_blocks {
+        for data_block in &self.data_blocks {
             let buf = data_block.encode();
 
             let data_block_pointer = BlockPointer(offset_counter, buf.len());
@@ -59,18 +59,51 @@ impl SSTableBuilder {
             offset_counter = offset_counter + buf.len();
         }
 
-
         // Write index portion of SSTable
-        for indexes_record in indexes_records {
-            file_obj.write(indexes_record.encode().as_ref())?;
-        }
-        // Write Footer
-        let footer = Footer{
-            index_block_pointers: indexes_records,
-            num_of_index_block: indexes_records.len(),
-        }
+        let mut index_block_builder = BlockBuilder::new();
+        let mut index_block_pointers: Vec<BlockPointer> = Vec::new();
+        for indexes_record in &indexes_records {
+            if index_block_builder
+                .add(
+                    indexes_record.largest_key.as_slice(),
+                    indexes_record.data_block_pointer.encode().as_ref(),
+                )
+                .is_err()
+            {
+                // current block is full. flush content of current block to disk
+                let buf = index_block_builder.build().encode();
+                let ret = file_obj.write(buf.as_ref())?;
 
-        todo!()
+                let index_block_pointer = BlockPointer(offset_counter, buf.len());
+                offset_counter = offset_counter + buf.len();
+                index_block_pointers.push(index_block_pointer);
+
+                // start new block
+                index_block_builder.clean_up();
+                let ret = index_block_builder.add(
+                    indexes_record.largest_key.as_slice(),
+                    indexes_record.data_block_pointer.encode().as_ref(),
+                )?;
+            }
+        }
+        // finish the last block
+        let buf = index_block_builder.build().encode();
+        let ret = file_obj.write(buf.as_ref())?;
+        let index_block_pointer = BlockPointer(offset_counter, buf.len());
+        index_block_pointers.push(index_block_pointer);
+
+        // Write Footer
+        let footer = Footer {
+            num_of_index_block: index_block_pointers.len(),
+            index_block_pointers,
+        };
+        let buf = footer.encode();
+        let ret = file_obj.write(buf.as_ref())?;
+        Ok(SSTable {
+            file_object: file_obj,
+            indexes: indexes_records,
+            seq,
+        })
     }
     fn evaluate_sstable_size(&self) -> usize {
         todo!()

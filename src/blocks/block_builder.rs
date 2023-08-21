@@ -1,6 +1,7 @@
-use std::thread::sleep;
 use crate::blocks::{Blocks, SIZE_U16};
+use anyhow::Result;
 use bytes::BufMut;
+use std::io;
 
 pub const BLOCK_SIZE: usize = 4 * 1024;
 
@@ -43,16 +44,18 @@ impl BlockBuilder {
     }
 
     /// add function will encode the `key` and `value` into the format described previously
-    pub fn add(&mut self, key: &[u8], value: &[u8]) -> Result<(), &str> {
+    pub fn add(&mut self, key: &[u8], value: &[u8]) -> Result<()> {
         // if the amount of bytes of current blocks exceeds the capacity of block limits
         // return error with info, If the first record inserting to current block exceeds
         // the block limits, current block will be extended
-        if Self::evaluate_record_encoded_length(key, value) + self.amount  > BLOCK_SIZE {
-            return Err("block overflow");
+        if Self::evaluate_record_encoded_length(key, value) + self.amount > BLOCK_SIZE {
+            use anyhow::Error;
+            return Err(Error::from(Box::new(io::Error::new(io::ErrorKind::Other, "your message here"))));
+
         }
 
         // write the offset of current record
-        self.offsets.push((self.amount -2) as u16);
+        self.offsets.push((self.amount - 2) as u16);
 
         // encoding key part
         let key_length = key.len() as u16;
@@ -69,7 +72,7 @@ impl BlockBuilder {
         }
 
         // increasing the amount base on actual encoded length
-        self.amount = self.amount + Self::evaluate_record_encoded_length(key,value);
+        self.amount = self.amount + Self::evaluate_record_encoded_length(key, value);
         return Ok(());
     }
     pub fn build(&self) -> Blocks {
@@ -77,16 +80,16 @@ impl BlockBuilder {
         for offset in &self.offsets {
             buf.put_u16(*offset);
         }
-        buf.put_u16(self.offsets.len()as u16);
+        buf.put_u16(self.offsets.len() as u16);
 
-        Blocks{
-            data:self.data.clone(),
-            offsets:self.offsets.clone(),
+        Blocks {
+            data: self.data.clone(),
+            offsets: self.offsets.clone(),
             num_of_elements: self.offsets.len(),
         }
     }
 
-    pub fn clean_up(&mut self){
+    pub fn clean_up(&mut self) {
         self.data.clear();
         self.offsets.clear();
         self.amount = 0;

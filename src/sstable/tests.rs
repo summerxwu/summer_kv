@@ -23,7 +23,7 @@ impl TestSSTable {
         TestSSTable {
             sstable,
             builder,
-            record_num,
+            record_num:number,
         }
     }
 }

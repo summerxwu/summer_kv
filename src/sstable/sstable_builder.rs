@@ -17,7 +17,8 @@ impl SSTableBuilder {
         }
     }
     pub fn approximate_size_after_add(&self, key: &[u8], value: &[u8]) -> usize {
-        todo!()
+        //todo
+        1
     }
     // TODO(summerxwu): Maybe need a return value to indicate the result
     pub fn add(&mut self, key: &[u8], value: &[u8]) {

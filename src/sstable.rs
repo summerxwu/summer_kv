@@ -68,7 +68,7 @@ impl SSTable {
     /// create a new SSTable object by a exists disk file identified by sequence number
     fn open(seq: usize) -> Result<Self> {
         let file_path = env::sstfile_path(seq);
-        let file_object = env::FileObject::open(file_path.as_str())?;
+        let mut file_object = env::FileObject::open(file_path.as_str())?;
 
         // Initialize the `indexes` field
         // init the footer
@@ -84,7 +84,7 @@ impl SSTable {
         // read records of each index block pointed by footer
         for index_block_pointer in &footer_obj.index_block_pointers {
             //read the index block
-            let buf = file_object.read(index_block_pointer.0, index_block_pointer.1)?;
+            let buf = file_object.read(index_block_pointer.0 as u64, index_block_pointer.1)?;
             let index_block_obj = Blocks::decode(buf.as_ref());
             let mut record_iter = BlockRecordIterator::new(&index_block_obj);
             while record_iter.is_valid() {

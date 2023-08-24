@@ -1,6 +1,6 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
-mod blocks;
+pub mod blocks;
 mod sstable;
 mod util;
 

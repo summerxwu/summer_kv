@@ -62,4 +62,5 @@ fn test_iterator_next() {
     iter.next();
     assert!(iter.is_valid());
     assert_eq!("key_6".as_bytes(),iter.key());
+    println!("finish")
 }

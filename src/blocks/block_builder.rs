@@ -92,6 +92,9 @@ impl BlockBuilder {
     pub fn clean_up(&mut self) {
         self.data.clear();
         self.offsets.clear();
-        self.amount = 0;
+        self.amount = 2;
+    }
+    pub fn is_empty(&self) ->bool{
+        self.amount == 2
     }
 }

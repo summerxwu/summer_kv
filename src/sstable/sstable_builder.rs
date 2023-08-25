@@ -19,7 +19,7 @@ impl SSTableBuilder {
 
     pub fn approximate_size_after_add(&self, key: &[u8], value: &[u8]) -> usize {
         // TODO(summerxwu): accumulate the data size of current builder memory
-        1
+        SSTABLE_SIZE_LIMIT
     }
 
     /// [`add`] function append user specified key and value pair to current builder.
@@ -42,7 +42,12 @@ impl SSTableBuilder {
         return Ok(());
     }
     /// build will return the `SSTable` object and serializable the content to disk file
-    pub fn build(&self) -> Result<SSTable> {
+    pub fn build(&mut self) -> Result<SSTable> {
+        if !self.block_builder.is_empty(){
+            let data_block_holder = self.block_builder.build();
+            self.data_blocks.push(data_block_holder);
+            self.block_builder.clean_up();
+        }
         let seq = get_global_sequence_number();
         let mut file_obj = FileObject::create(sstfile_path(seq as usize).as_str())?;
 

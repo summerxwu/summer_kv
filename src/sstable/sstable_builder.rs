@@ -16,31 +16,35 @@ impl SSTableBuilder {
             block_builder: BlockBuilder::new(),
         }
     }
+
     pub fn approximate_size_after_add(&self, key: &[u8], value: &[u8]) -> usize {
-        //todo
+        // TODO(summerxwu): accumulate the data size of current builder memory
         1
     }
-    // TODO(summerxwu): Maybe need a return value to indicate the result
-    pub fn add(&mut self, key: &[u8], value: &[u8]) {
-        if self.approximate_size_after_add(key, value) <= SSTABLE_SIZE_LIMIT
-            && self.block_builder.add(key, value).is_ok()
-        {
-            return;
+
+    /// [`add`] function append user specified key and value pair to current builder.
+    /// notice that there is no limitations of file size, because of the SSTable is ba
+    pub fn add(&mut self, key: &[u8], value: &[u8]) -> Result<()> {
+        if self.approximate_size_after_add(key, value) > SSTABLE_SIZE_LIMIT {
+            return Ok(());
         }
-        // finish current data_block
-        let data_block_holder = self.block_builder.build();
-        self.data_blocks.push(data_block_holder);
-        self.block_builder.clean_up();
-        // Add the failed KV pair agine
-        // panic if failed
-        self.block_builder
-            .add(key, value)
-            .expect("The build has already been reset, it should not failed to add content");
+        if self.block_builder.add(key, value).is_err() {
+            // finish current data_block
+            let data_block_holder = self.block_builder.build();
+            self.data_blocks.push(data_block_holder);
+            self.block_builder.clean_up();
+            // Add the failed KV pair agine
+            // panic if failed
+            self.block_builder
+                .add(key, value)
+                .expect("The build has already been reset, it should not failed to add content");
+        }
+        return Ok(());
     }
     /// build will return the `SSTable` object and serializable the content to disk file
     pub fn build(&self) -> Result<SSTable> {
         let seq = get_global_sequence_number();
-        let mut file_obj = FileObject::create(sstfile_path(seq).as_str())?;
+        let mut file_obj = FileObject::create(sstfile_path(seq as usize).as_str())?;
 
         let mut indexes_records: Vec<IndexBlockRecord> = Vec::new();
         let mut offset_counter = 0;
@@ -103,10 +107,11 @@ impl SSTableBuilder {
         Ok(SSTable {
             file_object: file_obj,
             indexes: indexes_records,
-            seq,
+            seq: seq as usize,
         })
     }
     fn evaluate_sstable_size(&self) -> usize {
         todo!()
     }
 }
+

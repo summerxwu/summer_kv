@@ -1,9 +1,10 @@
+use std::sync::Arc;
 use crate::blocks::block_builder::BlockBuilder;
 use crate::blocks::iterator::BlockRecordIterator;
 use crate::blocks::Blocks;
 use crate::iterator::Iterator;
 
-fn create_block_with_rec_num(size: u8) -> Blocks {
+fn create_block_with_rec_num(size: u8) -> Arc<Blocks> {
     let mut builder = BlockBuilder::new();
     for i in 0..size {
         builder
@@ -13,7 +14,7 @@ fn create_block_with_rec_num(size: u8) -> Blocks {
             )
             .expect("Testing expect");
     }
-    builder.build()
+    Arc::new(builder.build())
 }
 
 #[test]
@@ -27,20 +28,20 @@ fn test_build_block() {
 #[test]
 fn test_iterator_create() {
     let block = create_block_with_rec_num(1);
-    let iter = BlockRecordIterator::new(&block);
+    let iter = BlockRecordIterator::new(block);
 }
 
 #[test]
 fn test_iterator_seek_to_first() {
     let block = create_block_with_rec_num(10);
-    let mut iter = BlockRecordIterator::new(&block);
+    let mut iter = BlockRecordIterator::new(block);
     iter.seek_to_first();
     assert_eq!("key_1".as_bytes(), iter.key());
 }
 #[test]
 fn test_iterator_seek_to_last() {
     let block = create_block_with_rec_num(10);
-    let mut iter = BlockRecordIterator::new(&block);
+    let mut iter = BlockRecordIterator::new(block);
     iter.seek_to_last();
     assert_eq!("key_10".as_bytes(), iter.key());
 }
@@ -48,14 +49,14 @@ fn test_iterator_seek_to_last() {
 #[test]
 fn test_iterator_seek_to_key(){
     let block = create_block_with_rec_num(10);
-    let mut iter = BlockRecordIterator::new(&block);
+    let mut iter = BlockRecordIterator::new(block);
     iter.seek_to_key("key_7".as_ref());
     assert_eq!("key_7".as_bytes(),iter.key());
 }
 #[test]
 fn test_iterator_next() {
     let block = create_block_with_rec_num(10);
-    let mut iter = BlockRecordIterator::new(&block);
+    let mut iter = BlockRecordIterator::new(block);
     iter.seek_to_key("key_5".as_ref());
     assert!(iter.is_valid());
     assert_eq!("key_5".as_bytes(),iter.key());

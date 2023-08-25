@@ -1,9 +1,10 @@
+use std::sync::Arc;
 use crate::blocks::iterator::BlockRecordIterator;
 use crate::blocks::{Blocks, SIZE_U16};
+use crate::iterator::Iterator;
 use crate::util::env;
 use anyhow::Result;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-use crate::iterator::Iterator;
 
 mod iterator;
 mod sstable_builder;
@@ -68,7 +69,7 @@ impl SSTable {
     /// create a new SSTable object by a exists disk file identified by sequence number
     fn open(seq: usize) -> Result<Self> {
         let file_path = env::sstfile_path(seq);
-        let mut file_object = env::FileObject::open(file_path.as_str())?;
+        let file_object = env::FileObject::open(file_path.as_str())?;
 
         // Initialize the `indexes` field
         // init the footer
@@ -84,9 +85,9 @@ impl SSTable {
         // read records of each index block pointed by footer
         for index_block_pointer in &footer_obj.index_block_pointers {
             //read the index block
-            let buf = file_object.read(index_block_pointer.0 as u64, index_block_pointer.1)?;
-            let index_block_obj = Blocks::decode(buf.as_ref());
-            let mut record_iter = BlockRecordIterator::new(&index_block_obj);
+            let buf = file_object.read(index_block_pointer.0 as u64, index_block_pointer.1 as usize)?;
+            let index_block_obj = Arc::new(Blocks::decode(buf.as_ref().clone()));
+            let mut record_iter = BlockRecordIterator::new(index_block_obj);
             while record_iter.is_valid() {
                 let record = IndexBlockRecord {
                     largest_key: record_iter.key().to_vec().clone(),
@@ -173,19 +174,25 @@ impl Footer {
     }
 }
 /// offset and length
+#[derive(Debug)]
 struct BlockPointer(usize, usize);
 impl BlockPointer {
     fn encode(&self) -> Bytes {
         let mut buf = BytesMut::new();
-        buf.put_u16(self.0 as u16);
-        buf.put_u16(self.1 as u16);
+        buf.put_slice(self.0.to_be_bytes().as_ref());
+        buf.put_slice(self.1.to_be_bytes().as_ref());
         buf.freeze()
     }
     fn decode(raw: &[u8]) -> Self {
         let mut buf = &raw[..];
-        let offset = buf.get_u16() as usize;
-        let size = buf.get_u16() as usize;
+        let offset = buf.get_uint(std::mem::size_of::<usize>()) as usize;
+        let size = buf.get_uint(std::mem::size_of::<usize>()) as usize;
         BlockPointer(offset, size)
+    }
+}
+impl PartialEq for BlockPointer{
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0 && self.1 == other.1
     }
 }
 #[cfg(test)]

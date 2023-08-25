@@ -1,5 +1,5 @@
-use bytes::{Buf, BufMut, Bytes};
 pub use block_builder::BlockBuilder;
+use bytes::{Buf, BufMut, Bytes};
 
 /// A block is the smallest unit of read and caching in LSM tree.
 /// It is a collection of sorted key-value pairs.
@@ -54,11 +54,14 @@ impl Blocks {
             num_of_elements,
         }
     }
-    pub fn largest_key(&self) -> &[u8]{
+    pub fn largest_key(&self) -> &[u8] {
         todo!()
     }
-    pub fn smallest_key(&self) -> &[u8]{
+    pub fn smallest_key(&self) -> &[u8] {
         todo!()
+    }
+    pub fn size(&self) -> u64 {
+        (self.data.len() + self.offsets.len() * 2 + 2) as u64
     }
 }
 

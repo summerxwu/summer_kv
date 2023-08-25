@@ -2,18 +2,19 @@ use crate::blocks::{Blocks, SIZE_U16};
 use crate::iterator::Iterator;
 use bytes::Buf;
 use std::cmp::Ordering;
+use std::sync::Arc;
 
 /// RecordIterator yields the records in related blocks if the
 /// iterator it self is valid after invoking next()
 
-pub struct BlockRecordIterator<'a> {
-    block: &'a Blocks,
+pub struct BlockRecordIterator {
+    block: Arc<Blocks>,
     is_valid: bool,
     current_index: usize,
 }
-impl<'a> BlockRecordIterator<'a> {
+impl BlockRecordIterator {
     
-    fn key_at_index(&self, index: usize) -> Result<&'a [u8], String> {
+    fn key_at_index(&self, index: usize) -> Result<&[u8], String> {
         if index >= self.block.num_of_elements {
             return Err(format!("given index out of range of block`:"));
         }
@@ -26,8 +27,8 @@ impl<'a> BlockRecordIterator<'a> {
     }
 }
 
-impl<'a> Iterator for BlockRecordIterator<'a> {
-    type Item = &'a Blocks;
+impl Iterator for BlockRecordIterator {
+    type Item = Arc<Blocks>;
 
     fn new(arg: Self::Item) -> Self {
         BlockRecordIterator {

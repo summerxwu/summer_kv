@@ -3,7 +3,9 @@ use bytes::{Bytes, BytesMut};
 use std::fs::{File, OpenOptions};
 use std::io::{Seek, SeekFrom, Write};
 use std::os::unix::fs::FileExt;
+use std::sync::atomic::{AtomicU64, Ordering};
 
+static GLOBAL_SEQUENCE_NUMBER: AtomicU64 = AtomicU64::new(0);
 pub struct FileObject {
     file_handler: File,
 }
@@ -28,14 +30,14 @@ impl FileObject {
     }
 
     /// Read content from file from `offset` by `length` long
-    pub fn read(&mut self, offset: u64, length: usize) -> Result<Bytes> {
+    pub fn read(&self, offset: u64, length: usize) -> Result<Bytes> {
         let mut buf = BytesMut::zeroed(length);
         self.file_handler.read_exact_at(buf.as_mut(), offset)?;
         Ok(buf.freeze())
     }
 
     /// Read Last length bytes of file content
-    pub fn read_last_of(&mut self, length: usize) -> Result<Bytes> {
+    pub fn read_last_of(&self, length: usize) -> Result<Bytes> {
         let offset = self.file_handler.metadata()?.len() - length as u64;
         self.read(offset, length)
     }
@@ -60,13 +62,13 @@ impl FileObject {
 pub fn sstfile_path(seq: usize) -> String {
     format!("/tmp/summer_kv_test/{}.sst", seq)
 }
-pub fn get_global_sequence_number() -> usize {
-    1
+pub fn get_global_sequence_number() -> u64 {
+    GLOBAL_SEQUENCE_NUMBER.fetch_add(1, Ordering::SeqCst).into()
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::util::env::FileObject;
+    use crate::util::env::{get_global_sequence_number, FileObject};
     use std::fs;
     use std::io::Write;
 
@@ -81,7 +83,7 @@ mod tests {
         f.file_handler.sync_all().unwrap();
     }
     fn remove_tmp_file() {
-       let _ = fs::remove_file(TMP_FILE);
+        let _ = fs::remove_file(TMP_FILE);
     }
     struct RaiiFinalize {}
     impl Drop for RaiiFinalize {
@@ -91,16 +93,15 @@ mod tests {
     }
     #[test]
     fn test_create() {
-        let raii = RaiiFinalize{};
-        let ret = FileObject::create(TMP_FILE) ;
+        let raii = RaiiFinalize {};
+        let ret = FileObject::create(TMP_FILE);
         assert!(ret.is_ok());
         let ret = FileObject::create(TMP_FILE);
         assert!(ret.is_err());
-
     }
     #[test]
     fn test_open() {
-        let raii = RaiiFinalize{};
+        let raii = RaiiFinalize {};
         create_tmp_file(4);
         let ret = FileObject::open(TMP_FILE);
         assert!(ret.is_ok());
@@ -111,7 +112,7 @@ mod tests {
         create_tmp_file(4);
         let ret = FileObject::open(TMP_FILE);
         assert!(ret.is_ok());
-        let mut file_obj = ret.unwrap();
+        let file_obj = ret.unwrap();
         let ret = file_obj.read(1023, 4);
         assert!(ret.is_ok());
         let buf = ret.unwrap();
@@ -119,27 +120,39 @@ mod tests {
         let result = format!("{:?}", buf.to_vec());
         assert_eq!(result, "[1, 2, 2, 2]");
     }
+
     #[test]
     fn test_write_and_read_last() {
-        let raii = RaiiFinalize{};
+        let raii = RaiiFinalize {};
         create_tmp_file(1);
         let ret = FileObject::open(TMP_FILE);
         assert!(ret.is_ok());
         let mut file_obj = ret.unwrap();
-        file_obj.write("abcdefg".as_bytes()).expect("Testing expect");
+        file_obj
+            .write("abcdefg".as_bytes())
+            .expect("Testing expect");
         let ret = file_obj.read_last_of(7).expect("Testing expect");
-        assert_eq!(ret.len(),7);
-        assert_eq!(ret.as_ref(),"abcdefg".as_bytes())
+        assert_eq!(ret.len(), 7);
+        assert_eq!(ret.as_ref(), "abcdefg".as_bytes())
     }
 
     #[test]
-    fn test_size(){
-        let raii = RaiiFinalize{};
+    fn test_size() {
+        let raii = RaiiFinalize {};
         create_tmp_file(1);
         let ret = FileObject::open(TMP_FILE);
         assert!(ret.is_ok());
         let mut file_obj = ret.unwrap();
-        file_obj.write("abcdefg".as_bytes()).expect("Testing expect");
-        assert_eq!(1031,file_obj.size())
+        file_obj
+            .write("abcdefg".as_bytes())
+            .expect("Testing expect");
+        assert_eq!(1031, file_obj.size())
+    }
+
+    #[test]
+    fn test_global_seq_fetch() {
+        assert_eq!(0, get_global_sequence_number());
+        assert_eq!(1, get_global_sequence_number());
+        assert_eq!(2, get_global_sequence_number());
     }
 }

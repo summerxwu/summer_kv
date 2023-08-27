@@ -95,7 +95,7 @@ fn test_sstable_iterator() {
 }
 #[test]
 fn test_sstable_seek() {
-    let test_sstable = TestSSTable::create_for_test(100);
+    let test_sstable = TestSSTable::create_for_test(99);
     let sstable = SSTable::open(test_sstable.sstable.seq).unwrap();
     let mut sstable_iter = SSTableRecordIterator::new(Arc::new(sstable));
     sstable_iter.seek_to_first();
@@ -104,13 +104,6 @@ fn test_sstable_seek() {
     assert!(sstable_iter.is_valid());
     assert_eq!(sstable_iter.key(), b"key_53".as_slice());
     assert_eq!(sstable_iter.value(), b"value_53".as_slice());
-}
-#[test]
-fn test_sstable_get() {
-    let test_sstable = TestSSTable::create_for_test(10);
-    let sstable = SSTable::open(test_sstable.sstable.seq).unwrap();
-    let value = sstable.get(b"key_5").unwrap();
-    assert_eq!(value, b"value_5".as_slice());
-    let value = sstable.get(b"key_not_found");
-    assert!(value.is_err());
+    sstable_iter.seek_to_key("key_not_exists".as_bytes());
+    assert!(!sstable_iter.is_valid());
 }

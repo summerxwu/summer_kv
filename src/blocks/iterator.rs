@@ -13,7 +13,6 @@ pub struct BlockRecordIterator {
     current_index: usize,
 }
 impl BlockRecordIterator {
-    
     fn key_at_index(&self, index: usize) -> Result<&[u8], String> {
         if index >= self.block.num_of_elements {
             return Err(format!("given index out of range of block`:"));
@@ -41,6 +40,7 @@ impl Iterator for BlockRecordIterator {
     fn seek_to_first(&mut self) {
         if self.block.offsets.len() == 0 {
             self.is_valid = false;
+            return ;
         }
         self.current_index = 0;
         self.is_valid = true;
@@ -48,32 +48,35 @@ impl Iterator for BlockRecordIterator {
     fn seek_to_last(&mut self) {
         if self.block.offsets.len() == 0 {
             self.is_valid = false;
+            return ;
         }
         self.current_index = self.block.offsets.len() - 1;
         self.is_valid = true;
     }
-    fn seek_to_key(&mut self, key: &[u8]) -> bool{
+    fn seek_to_key(&mut self, key: &[u8])  {
         // TODO(summerxwu): Maybe use binary search is better
         if self.block.offsets.len() == 0 {
             self.is_valid = false;
-            return false;
+            return;
         }
         let mut iter_index = self.current_index;
         if self.key().cmp(key) == Ordering::Equal {
-            return true;
+            self.is_valid = true;
+            return ;
         }
         iter_index = iter_index + 1;
         while (iter_index % self.block.offsets.len()) != self.current_index {
-            if let Ok(ikey) = self.key_at_index(iter_index){
+            if let Ok(ikey) = self.key_at_index(iter_index) {
                 if ikey.cmp(key) == Ordering::Equal {
                     self.current_index = iter_index;
                     self.is_valid = true;
-                    return true
+                    return;
                 }
             }
-            iter_index = iter_index+1;
+            iter_index = iter_index + 1;
         }
-        return false
+        self.is_valid = false;
+        return ;
     }
     fn is_valid(&self) -> bool {
         self.is_valid
@@ -81,6 +84,7 @@ impl Iterator for BlockRecordIterator {
     fn next(&mut self) {
         if self.current_index + 1 >= self.block.num_of_elements {
             self.is_valid = false;
+            return ;
         }
         self.current_index = self.current_index + 1;
         self.is_valid = true;
@@ -89,6 +93,7 @@ impl Iterator for BlockRecordIterator {
     fn prev(&mut self) {
         if self.current_index == 0 {
             self.is_valid = false;
+            return;
         }
         self.current_index = self.current_index - 1;
         self.is_valid = true;

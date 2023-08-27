@@ -88,6 +88,7 @@ impl SSTable {
             let buf = file_object.read(index_block_pointer.0 as u64, index_block_pointer.1 as usize)?;
             let index_block_obj = Arc::new(Blocks::decode(buf.as_ref().clone()));
             let mut record_iter = BlockRecordIterator::new(index_block_obj);
+            record_iter.seek_to_first();
             while record_iter.is_valid() {
                 let record = IndexBlockRecord {
                     largest_key: record_iter.key().to_vec().clone(),

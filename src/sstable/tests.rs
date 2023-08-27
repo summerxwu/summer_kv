@@ -88,6 +88,10 @@ fn test_sstable_iterator() {
     assert!(sstable_iter.is_valid());
     assert_eq!(sstable_iter.key(), b"key_2".as_slice());
     assert_eq!(sstable_iter.value(), b"value_2".as_slice());
+    sstable_iter.seek_to_last();
+    assert!(sstable_iter.is_valid());
+    assert_eq!(sstable_iter.key(),b"key_100".as_slice());
+    assert_eq!(sstable_iter.value(),b"value_100".as_slice());
 }
 #[test]
 fn test_sstable_seek() {

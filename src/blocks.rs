@@ -55,10 +55,16 @@ impl Blocks {
         }
     }
     pub fn largest_key(&self) -> &[u8] {
-        todo!()
+        let offset = self.offsets[self.offsets.len() - 1] as usize;
+        let buf = self.data.as_slice();
+        let key_length = (&buf[offset..offset + SIZE_U16]).get_u16() as usize;
+        &buf[offset + SIZE_U16..offset + SIZE_U16 + key_length]
     }
     pub fn smallest_key(&self) -> &[u8] {
-        todo!()
+        let offset = 0;
+        let buf = self.data.as_slice();
+        let key_length = (&buf[0..SIZE_U16]).get_u16() as usize;
+        &buf[SIZE_U16..SIZE_U16 + key_length]
     }
     pub fn size(&self) -> u64 {
         (self.data.len() + self.offsets.len() * 2 + 2) as u64

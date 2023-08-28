@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 pub mod blocks;
 mod sstable;
+mod memtable;
 mod util;
 
 mod iterator;

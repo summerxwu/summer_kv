@@ -31,7 +31,7 @@ impl MemTable {
         log_record_builder.add(OperationType::PUT, key, value)?;
         let ret = self
             .logger
-            .log_and_sync(log_record_builder.build().as_slice());
+            .log_and_sync(log_record_builder.build());
 
         assert!(ret.is_ok());
         self.table
@@ -44,8 +44,10 @@ impl MemTable {
             Some(value) => Some(value.clone()),
         }
     }
+
+    /// delete is composed by putting a new record with zero length value portion
     pub fn delete(&mut self, key: &[u8]) -> Result<()> {
-        self.put(key,"".as_bytes())
+        self.put(key, "".as_bytes())
     }
     pub fn recover(file: &FileObject) -> Self {
         todo!()

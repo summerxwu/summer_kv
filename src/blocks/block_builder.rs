@@ -23,6 +23,7 @@ pub const BLOCK_SIZE: usize = 4 * 1024;
 /// +----------------------------------------------------------------------------------------------------------------------+
 /// ```
 /// Every record will be encoded in this format and save the raw bytes into the data field.
+/// If a records with a `zero length` value pay-load, it means a deleting operation by client
 
 pub struct BlockBuilder {
     data: Vec<u8>,
@@ -50,8 +51,10 @@ impl BlockBuilder {
         // the block limits, current block will be extended
         if Self::evaluate_record_encoded_length(key, value) + self.amount > BLOCK_SIZE {
             use anyhow::Error;
-            return Err(Error::from(Box::new(io::Error::new(io::ErrorKind::Other, "your message here"))));
-
+            return Err(Error::from(Box::new(io::Error::new(
+                io::ErrorKind::Other,
+                "your message here",
+            ))));
         }
 
         // write the offset of current record
@@ -94,7 +97,7 @@ impl BlockBuilder {
         self.offsets.clear();
         self.amount = 2;
     }
-    pub fn is_empty(&self) ->bool{
+    pub fn is_empty(&self) -> bool {
         self.amount == 2
     }
 }

@@ -1,10 +1,10 @@
-use std::sync::Arc;
 use crate::blocks::iterator::BlockRecordIterator;
 use crate::blocks::{Blocks, SIZE_U16};
 use crate::iterator::Iterator;
 use crate::util::env;
 use anyhow::Result;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
+use std::sync::Arc;
 
 mod iterator;
 mod sstable_builder;
@@ -28,7 +28,7 @@ pub type KVPair = (Bytes, Bytes);
 /// index block is basically a data block but the record is consist of a key and a `block pointer`
 ///
 /// index block is of a record sorted.  The key of each record in index block is represent the
-/// largest key of a data block in current SSTable, the value is the related data `block pointer`.
+/// largest key of a data block in current SSTable, the value is the related data `block pointer`
 ///
 /// Records of the index block
 /// ``` text
@@ -85,7 +85,7 @@ impl SSTable {
         // read records of each index block pointed by footer
         for index_block_pointer in &footer_obj.index_block_pointers {
             //read the index block
-            let buf = file_object.read(index_block_pointer.0 as u64, index_block_pointer.1 )?;
+            let buf = file_object.read(index_block_pointer.0 as u64, index_block_pointer.1)?;
             let index_block_obj = Arc::new(Blocks::decode(buf.as_ref().clone()));
             let mut record_iter = BlockRecordIterator::new(index_block_obj);
             record_iter.seek_to_first();
@@ -188,7 +188,7 @@ impl BlockPointer {
         BlockPointer(offset, size)
     }
 }
-impl PartialEq for BlockPointer{
+impl PartialEq for BlockPointer {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0 && self.1 == other.1
     }

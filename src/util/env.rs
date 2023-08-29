@@ -62,6 +62,9 @@ impl FileObject {
 pub fn sstfile_path(seq: usize) -> String {
     format!("/tmp/summer_kv_test/{}.sst", seq)
 }
+pub fn logfile_path(seq: usize) -> String {
+    format!("/tmp/summer_kv_test/{}.log", seq)
+}
 pub fn get_global_sequence_number() -> u64 {
     GLOBAL_SEQUENCE_NUMBER.fetch_add(1, Ordering::SeqCst).into()
 }

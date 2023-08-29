@@ -1,16 +1,17 @@
-use crate::util::env::FileObject;
+use crate::util::env::{logfile_path, FileObject};
 use anyhow::Result;
 use bytes::Bytes;
 
-pub struct MemLogger {
+pub struct MemTableLogger {
     seq: u64,
     file_obj: FileObject,
 }
-impl MemLogger {
-    fn new(seq: u64) -> Self {
-        todo!()
+impl MemTableLogger {
+    pub fn new(seq: u64) -> Self {
+        let file_obj = FileObject::create(logfile_path(seq as usize).as_str()).unwrap();
+        MemTableLogger { seq, file_obj }
     }
-    fn log_and_sync(&self, log_records: &[LoggerRecord]) -> Result<()> {
+    pub fn log_and_sync(&self, log_records: &[LoggerRecord]) -> Result<()> {
         todo!()
     }
 }
@@ -29,20 +30,20 @@ impl LoggerRecord {
     }
 }
 
-enum OperationType {
+pub enum OperationType {
     PUT,
     DELETE,
 }
 
 pub struct LogRecordsBuilder {}
 impl LogRecordsBuilder {
-    fn new() -> Self {
+    pub fn new() -> Self {
         todo!()
     }
-    fn add(&mut self, key: &[u8], value: &[u8]) -> Result<()> {
+    pub fn add(&mut self, opt: OperationType, key: &[u8], value: &[u8]) -> Result<()> {
         todo!()
     }
-    fn build() -> Vec<LoggerRecord> {
+    pub fn build(&self) -> Vec<LoggerRecord> {
         todo!()
     }
 }

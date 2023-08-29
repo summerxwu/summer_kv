@@ -1,11 +1,11 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 pub mod blocks;
-mod sstable;
-mod memtable;
-mod util;
+pub mod sstable;
+pub mod memtable;
+pub mod util;
 
-mod iterator;
+pub mod iterator;
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }

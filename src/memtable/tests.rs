@@ -39,9 +39,10 @@ fn test_memtable_remove() {
     let ret = memtable.put("key1".as_bytes(), "value1".as_bytes());
     assert!(ret.is_ok());
     assert_eq!(memtable.get("key1".as_bytes()),Some("value1".into()));
+    assert_eq!(memtable.get("key1".as_bytes()),Some("value1".into()));
     assert_eq!(memtable.get("key".as_bytes()),None);
     let ret = memtable.delete("key1".as_bytes());
     assert!(ret.is_ok());
-    assert_eq!(memtable.get("key1".as_bytes()),Some("".into()));
+    assert_eq!(memtable.get("key1".as_bytes()),None);
 
 }

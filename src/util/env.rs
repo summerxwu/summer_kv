@@ -21,7 +21,7 @@ impl FileObject {
         Ok(FileObject { file_handler: file })
     }
 
-    /// Open a new FileObject by a given file name.
+    /// open a new FileObject by a given file name.
     /// Failed if file not exists.
     pub fn open(path: &str) -> Result<Self> {
         let file_handler = OpenOptions::new().read(true).write(true).open(path)?;

@@ -1,7 +1,6 @@
 use crate::util::env::{logfile_path, FileObject};
 use anyhow::Result;
 use bytes::{BufMut, Bytes, BytesMut};
-use std::thread::sleep;
 
 pub struct MemTableLogger {
     seq: u64,

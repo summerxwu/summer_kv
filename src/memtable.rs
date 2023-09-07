@@ -4,7 +4,7 @@ use anyhow::Result;
 use bytes::Bytes;
 use std::collections::BTreeMap;
 
-mod logger;
+pub mod logger;
 
 pub struct MemTable {
     /// table is the sorted searching data structure
@@ -28,10 +28,13 @@ impl MemTable {
     pub fn put(&mut self, key: &[u8], value: &[u8]) -> Result<()> {
         // logging and flushing to disk first
         let mut log_record_builder = LogRecordsBuilder::new();
-        log_record_builder.add(OperationType::PUT, key, value)?;
-        let ret = self
-            .logger
-            .log_and_sync(log_record_builder.build());
+        if value.len() == 0{
+            log_record_builder.add(OperationType::DELETE, key, value)?;
+        }
+        else{
+            log_record_builder.add(OperationType::PUT, key, value)?;
+        }
+        let ret = self.logger.log_and_sync(log_record_builder.build());
 
         assert!(ret.is_ok());
         self.table
@@ -41,7 +44,12 @@ impl MemTable {
     pub fn get(&self, key: &[u8]) -> Option<Bytes> {
         match self.table.get(key) {
             None => None,
-            Some(value) => Some(value.clone()),
+            Some(value) => {
+                if value.is_empty() {
+                    return None;
+                }
+                Some(value.clone())
+            }
         }
     }
 

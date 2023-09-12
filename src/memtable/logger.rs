@@ -1,6 +1,8 @@
+use crate::blocks::SIZE_U16;
+use crate::memtable::logger::OperationType::{DELETE, PUT};
 use crate::util::env::{logfile_path, FileObject};
 use anyhow::Result;
-use bytes::{BufMut, Bytes, BytesMut};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 pub struct MemTableLogger {
     seq: u64,
@@ -11,7 +13,7 @@ impl MemTableLogger {
         let file_obj = FileObject::create(logfile_path(seq as usize).as_str()).unwrap();
         MemTableLogger { seq, file_obj }
     }
-    pub fn log_and_sync(& mut self, log_records: &[u8]) -> Result<()> {
+    pub fn log_and_sync(&mut self, log_records: &[u8]) -> Result<()> {
         self.file_obj.write(log_records)?;
         self.file_obj.sync()
     }
@@ -23,15 +25,58 @@ pub struct LoggerRecord {
     value: Bytes,
 }
 impl LoggerRecord {
-    fn encode(&self) -> Bytes {
-        todo!()
+    pub fn new(opt: OperationType, key: &[u8], value: &[u8]) -> Self {
+        LoggerRecord {
+            opt_type: opt,
+            key: Bytes::copy_from_slice(key),
+            value: Bytes::copy_from_slice(value),
+        }
     }
+    fn encode(&self) -> Bytes {
+        let mut buf = BytesMut::new();
+        //encoding key portion of the records
+        buf.put_u16(self.key.len() as u16);
+        buf.put_slice(self.key.as_ref());
+        // encoding value portion of the records
+        match self.opt_type {
+            OperationType::PUT => {
+                buf.put_u16(self.value.len() as u16);
+                buf.put_slice(self.value.as_ref());
+            }
+            OperationType::DELETE => {
+                buf.put_u16(0);
+            }
+        }
+        buf.freeze()
+    }
+
     fn decode(buf: &[u8]) -> Self {
-        todo!()
+        let mut raw = buf;
+        let key_length = raw.get_u16();
+        let key_raw = &raw[SIZE_U16..SIZE_U16 + key_length as usize];
+        let key = Bytes::copy_from_slice(key_raw);
+        let mut value_portion = &raw[SIZE_U16 + key_length as usize..];
+        let value_length = value_portion.get_u16();
+        if value_length == 0 {
+            return LoggerRecord {
+                opt_type: DELETE,
+                key,
+                value: Bytes::copy_from_slice("".as_bytes()),
+            };
+        }
+        return LoggerRecord {
+            opt_type: PUT,
+            key,
+            value: Bytes::copy_from_slice(
+                &value_portion[SIZE_U16..SIZE_U16 + value_length as usize],
+            ),
+        };
     }
 }
 
+#[derive(Default)]
 pub enum OperationType {
+    #[default]
     PUT,
     DELETE,
 }
@@ -54,21 +99,8 @@ impl LogRecordsBuilder {
         LogRecordsBuilder { data: Vec::new() }
     }
     pub fn add(&mut self, opt: OperationType, key: &[u8], value: &[u8]) -> Result<()> {
-        let mut buf = BytesMut::new();
-        //encoding key portion of the records
-        buf.put_u16(key.len() as u16);
-        buf.put_slice(key);
-        // encoding value portion of the records
-        match opt {
-            OperationType::PUT => {
-                buf.put_u16(value.len() as u16);
-                buf.put_slice(value);
-            }
-            OperationType::DELETE => {
-                buf.put_u16(0);
-            }
-        }
-        self.data.put_slice(buf.as_ref());
+        let record = LoggerRecord::new(opt, key, value);
+        self.data.put_slice(record.encode().as_ref());
         Ok(())
     }
     pub fn build(&self) -> &[u8] {

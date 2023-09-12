@@ -1,7 +1,7 @@
 use anyhow::Result;
 use bytes::{Bytes, BytesMut};
 use std::fs::{File, OpenOptions};
-use std::io::{Seek, SeekFrom, Write};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::os::unix::fs::FileExt;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -29,8 +29,17 @@ impl FileObject {
         Ok(FileObject { file_handler })
     }
 
+    pub fn read(&mut self, length: usize) -> Result<Bytes> {
+        let mut buf = BytesMut::zeroed(length);
+        let read_size = self.file_handler.read(buf.as_mut())?;
+        if read_size == 0 {
+            return Err(anyhow::Error::msg::<String>("EOF reached".to_string()));
+        }
+        Ok(buf.freeze())
+    }
+
     /// Read content from file from `offset` by `length` long
-    pub fn read(&self, offset: u64, length: usize) -> Result<Bytes> {
+    pub fn read_at(&self, offset: u64, length: usize) -> Result<Bytes> {
         let mut buf = BytesMut::zeroed(length);
         self.file_handler.read_exact_at(buf.as_mut(), offset)?;
         Ok(buf.freeze())
@@ -39,7 +48,7 @@ impl FileObject {
     /// Read Last length bytes of file content
     pub fn read_last_of(&self, length: usize) -> Result<Bytes> {
         let offset = self.file_handler.metadata()?.len() - length as u64;
-        self.read(offset, length)
+        self.read_at(offset, length)
     }
 
     /// Write Content to file
@@ -116,7 +125,7 @@ mod tests {
         let ret = FileObject::open(TMP_FILE);
         assert!(ret.is_ok());
         let file_obj = ret.unwrap();
-        let ret = file_obj.read(1023, 4);
+        let ret = file_obj.read_at(1023, 4);
         assert!(ret.is_ok());
         let buf = ret.unwrap();
         assert_eq!(buf.to_vec().len(), 4);

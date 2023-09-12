@@ -3,6 +3,7 @@ use crate::memtable::logger::OperationType::{DELETE, PUT};
 use crate::util::env::{logfile_path, FileObject};
 use anyhow::Result;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
+use std::fmt::Formatter;
 
 pub struct MemTableLogger {
     seq: u64,
@@ -32,31 +33,31 @@ impl LoggerRecord {
             value: Bytes::copy_from_slice(value),
         }
     }
-    fn encode(&self) -> Bytes {
+    pub fn encode(&self) -> Bytes {
         let mut buf = BytesMut::new();
         //encoding key portion of the records
         buf.put_u16(self.key.len() as u16);
         buf.put_slice(self.key.as_ref());
         // encoding value portion of the records
         match self.opt_type {
-            OperationType::PUT => {
+            PUT => {
                 buf.put_u16(self.value.len() as u16);
                 buf.put_slice(self.value.as_ref());
             }
-            OperationType::DELETE => {
+            DELETE => {
                 buf.put_u16(0);
             }
         }
         buf.freeze()
     }
 
-    fn decode(buf: &[u8]) -> Self {
-        let mut raw = buf;
-        let key_length = raw.get_u16();
-        let key_raw = &raw[SIZE_U16..SIZE_U16 + key_length as usize];
+    pub fn decode(buf: &[u8]) -> Self {
+        let raw = buf;
+        let key_length = raw[..SIZE_U16].as_ref().get_u16();
+        let key_raw = raw[SIZE_U16..SIZE_U16 + key_length as usize].as_ref();
         let key = Bytes::copy_from_slice(key_raw);
-        let mut value_portion = &raw[SIZE_U16 + key_length as usize..];
-        let value_length = value_portion.get_u16();
+        let value_portion = raw[SIZE_U16 + key_length as usize..].as_ref();
+        let value_length = value_portion[..SIZE_U16].as_ref().get_u16();
         if value_length == 0 {
             return LoggerRecord {
                 opt_type: DELETE,
@@ -67,14 +68,22 @@ impl LoggerRecord {
         return LoggerRecord {
             opt_type: PUT,
             key,
-            value: Bytes::copy_from_slice(
-                &value_portion[SIZE_U16..SIZE_U16 + value_length as usize],
-            ),
+            value: Bytes::copy_from_slice(value_portion[SIZE_U16..SIZE_U16+value_length as usize].as_ref()),
         };
     }
 }
 
-#[derive(Default)]
+impl std::fmt::Display for LoggerRecord {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "===\nopt: {:?}\nkey: {:?}\nvalue: {:?}\n===",
+            self.opt_type, self.key, self.value,
+        )
+    }
+}
+
+#[derive(Default, Debug)]
 pub enum OperationType {
     #[default]
     PUT,
@@ -100,6 +109,7 @@ impl LogRecordsBuilder {
     }
     pub fn add(&mut self, opt: OperationType, key: &[u8], value: &[u8]) -> Result<()> {
         let record = LoggerRecord::new(opt, key, value);
+
         self.data.put_slice(record.encode().as_ref());
         Ok(())
     }

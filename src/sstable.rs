@@ -85,7 +85,7 @@ impl SSTable {
         // read records of each index block pointed by footer
         for index_block_pointer in &footer_obj.index_block_pointers {
             //read the index block
-            let buf = file_object.read(index_block_pointer.0 as u64, index_block_pointer.1)?;
+            let buf = file_object.read_at(index_block_pointer.0 as u64, index_block_pointer.1)?;
             let index_block_obj = Arc::new(Blocks::decode(buf.as_ref().clone()));
             let mut record_iter = BlockRecordIterator::new(index_block_obj);
             record_iter.seek_to_first();

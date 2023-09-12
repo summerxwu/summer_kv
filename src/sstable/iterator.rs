@@ -20,7 +20,7 @@ impl Iterator for SSTableRecordIterator {
         let length = sstable.indexes[data_block_index].data_block_pointer.1;
         let data_block_raw = sstable
             .file_object
-            .read(offset, length)
+            .read_at(offset, length)
             .expect("A SSTable file should contain one data block at least");
 
         let data_block = Arc::new(Blocks::decode(data_block_raw.as_ref()));
@@ -45,7 +45,7 @@ impl Iterator for SSTableRecordIterator {
         let data_block_raw = self
             .sstable
             .file_object
-            .read(offset, length)
+            .read_at(offset, length)
             .expect("A SSTable file should contain one data block at least");
 
         let data_block = Arc::new(Blocks::decode(data_block_raw.as_ref()));
@@ -66,7 +66,7 @@ impl Iterator for SSTableRecordIterator {
         let data_block_raw = self
             .sstable
             .file_object
-            .read(offset, length)
+            .read_at(offset, length)
             .expect("A SSTable file should contain one data block at least");
         let data_block = Arc::new(Blocks::decode(data_block_raw.as_ref()));
         self.data_block_iterator = BlockRecordIterator::new(data_block);
@@ -82,7 +82,7 @@ impl Iterator for SSTableRecordIterator {
                 let data_block_raw = self
                     .sstable
                     .file_object
-                    .read(offset, length)
+                    .read_at(offset, length)
                     .expect("A SSTable file block pointer invalid");
                 let data_block = Arc::new(Blocks::decode(data_block_raw.as_ref()));
                 self.data_block_iterator = BlockRecordIterator::new(data_block);
@@ -116,7 +116,7 @@ impl Iterator for SSTableRecordIterator {
             let data_block_raw = self
                 .sstable
                 .file_object
-                .read(offset, length)
+                .read_at(offset, length)
                 .expect("A SSTable file should contain one data block at least");
             let data_block = Arc::new(Blocks::decode(data_block_raw.as_ref()));
             self.data_block_iterator = BlockRecordIterator::new(data_block);
